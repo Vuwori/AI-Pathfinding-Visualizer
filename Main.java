@@ -19,25 +19,30 @@ public class Main {
         maze.setWall(2, 2);
         maze.setWall(2, 3);
 
-        System.out.println("Maze before BFS:");
-        MazeRenderer.print(maze);
-
         BFS bfs = new BFS();
-        List<Cell> path = bfs.findPath(maze);
 
+        //Run the animated BFS search
+        List<Cell> path = bfs.findPathAnimated(maze, 100);
+
+        //Stop if no path was found
         if (path.isEmpty()) {
             System.out.println("No path found.");
             return;
         }
 
+        //Remove all VISITED cells from the maze
+        maze.clearSearchResults();
+
+        //Mark only the final shortest path
         for (Cell cell : path) {
             if (!cell.isStart() && !cell.isEnd()) {
                 cell.setType(CellType.PATH);
             }
         }
 
+        //Print the clean final result
         System.out.println();
-        System.out.println("Maze with BFS path:");
+        System.out.println("BFS completed:");
         MazeRenderer.print(maze);
 
         System.out.println();

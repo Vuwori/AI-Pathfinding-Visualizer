@@ -69,6 +69,12 @@ public class Maze {
             );
         }
 
+        if (newStart == endCell) {
+            throw new IllegalArgumentException(
+                    "Start cell cannot be placed on the end cell"
+            );
+        }
+
         if (startCell != null) {
             startCell.setType(CellType.EMPTY);
         }
@@ -83,6 +89,12 @@ public class Maze {
         if (newEnd.getType() == CellType.WALL) {
             throw new IllegalArgumentException(
                     "End cell cannot be placed on a wall"
+            );
+        }
+
+        if (newEnd == startCell) {
+            throw new IllegalArgumentException(
+                    "End cell cannot be placed on the start cell"
             );
         }
 

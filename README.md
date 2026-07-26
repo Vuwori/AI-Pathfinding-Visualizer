@@ -10,7 +10,8 @@ Instead of simply implementing graph algorithms, this project allows you to watc
 
 - Interactive maze representation
 - Console-based maze visualization
-- Animated Breadth-First Search (BFS)
+- Animated Breadth-First Search (BFS), Depth-First Search (DFS) and Dijkstra's algorithm
+- Choose the algorithm from the command line
 - Displays the shortest path after the search completes
 - Clean object-oriented architecture
 - Extensible design for additional algorithms
@@ -22,9 +23,18 @@ Instead of simply implementing graph algorithms, this project allows you to watc
 | Algorithm | Status |
 |-----------|--------|
 | Breadth-First Search (BFS) | ✅ Implemented |
-| Depth-First Search (DFS) | 🚧 Planned |
-| Dijkstra | 🚧 Planned |
+| Depth-First Search (DFS) | ✅ Implemented |
+| Dijkstra | ✅ Implemented |
 | A* Search | 🚧 Planned |
+
+## Usage
+
+```bash
+javac Main.java algorithms/*.java maze/*.java renderer/*.java
+java Main bfs        # or: dfs, dijkstra (defaults to bfs)
+```
+
+BFS and Dijkstra always find the shortest path. DFS finds *a* path, but it is usually much longer, which makes the difference between the algorithms easy to see.
 
 ---
 
@@ -58,7 +68,7 @@ Instead of simply implementing graph algorithms, this project allows you to watc
 - **E** = End
 - **#** = Wall
 - **.** = Empty cell
-- **P** = Shortest path
+- **P** = Final path
 - **\*** = Visited cell (during animation)
 
 ---
@@ -69,7 +79,10 @@ Instead of simply implementing graph algorithms, this project allows you to watc
 AI-Pathfinding-Visualizer/
 │
 ├── algorithms/
-│   └── BFS.java
+│   ├── PathfindingAlgorithm.java
+│   ├── BFS.java
+│   ├── DFS.java
+│   └── Dijkstra.java
 │
 ├── maze/
 │   ├── Cell.java
@@ -90,7 +103,9 @@ AI-Pathfinding-Visualizer/
 - Object-Oriented Programming
 - Graph Traversal
 - Breadth-First Search
-- Queues
+- Depth-First Search
+- Dijkstra's Algorithm
+- Queues, Stacks and Priority Queues
 - HashMap
 - HashSet
 - Console Animation
@@ -99,8 +114,7 @@ AI-Pathfinding-Visualizer/
 
 ## Future Improvements
 
-- DFS Visualization
-- Dijkstra's Algorithm
+- Weighted cells for Dijkstra
 - A* Search
 - Random Maze Generator
 - JavaFX GUI

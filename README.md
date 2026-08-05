@@ -29,10 +29,22 @@ Instead of simply implementing graph algorithms, this project allows you to watc
 
 ## Usage
 
+The project is built with Maven. The included Maven Wrapper (`./mvnw`) downloads Maven automatically, so only Java 21 needs to be installed.
+
+Run directly:
+
 ```bash
-javac Main.java algorithms/*.java maze/*.java renderer/*.java
-java Main bfs        # or: dfs, dijkstra (defaults to bfs)
+./mvnw compile exec:java -Dexec.args="bfs"   # or: dfs, dijkstra (defaults to bfs)
 ```
+
+Or build a runnable jar:
+
+```bash
+./mvnw package
+java -jar target/ai-pathfinding-visualizer-1.0-SNAPSHOT.jar dijkstra
+```
+
+On Windows, use `mvnw.cmd` instead of `./mvnw`.
 
 BFS and Dijkstra always find the shortest path. DFS finds *a* path, but it is usually much longer, which makes the difference between the algorithms easy to see.
 
@@ -78,21 +90,25 @@ BFS and Dijkstra always find the shortest path. DFS finds *a* path, but it is us
 ```
 AI-Pathfinding-Visualizer/
 │
-├── algorithms/
-│   ├── PathfindingAlgorithm.java
-│   ├── BFS.java
-│   ├── DFS.java
-│   └── Dijkstra.java
+├── pom.xml
+├── mvnw / mvnw.cmd
 │
-├── maze/
-│   ├── Cell.java
-│   ├── CellType.java
-│   └── Maze.java
-│
-├── renderer/
-│   └── MazeRenderer.java
-│
-└── Main.java
+└── src/main/java/
+    ├── algorithms/
+    │   ├── PathfindingAlgorithm.java
+    │   ├── BFS.java
+    │   ├── DFS.java
+    │   └── Dijkstra.java
+    │
+    ├── maze/
+    │   ├── Cell.java
+    │   ├── CellType.java
+    │   └── Maze.java
+    │
+    ├── renderer/
+    │   └── MazeRenderer.java
+    │
+    └── Main.java
 ```
 
 ---
@@ -100,6 +116,7 @@ AI-Pathfinding-Visualizer/
 ## Technologies
 
 - Java 21
+- Maven
 - Object-Oriented Programming
 - Graph Traversal
 - Breadth-First Search

@@ -16,6 +16,11 @@ public abstract class PathfindingAlgorithm {
 
     public abstract List<Cell> findPathAnimated(Maze maze, long delayMilliseconds);
 
+    @Override
+    public String toString() {
+        return getName();
+    }
+
     protected void validateMaze(Maze maze) {
         if (maze.getStartCell() == null || maze.getEndCell() == null) {
             throw new IllegalStateException(

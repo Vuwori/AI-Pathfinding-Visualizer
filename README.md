@@ -46,7 +46,21 @@ java -jar target/ai-pathfinding-visualizer-1.0-SNAPSHOT.jar dijkstra
 
 On Windows, use `mvnw.cmd` instead of `./mvnw`.
 
+Run the tests:
+
+```bash
+./mvnw test
+```
+
 BFS and Dijkstra always find the shortest path. DFS finds *a* path, but it is usually much longer, which makes the difference between the algorithms easy to see.
+
+---
+
+## Testing
+
+The project has a JUnit 5 test suite covering the maze model and all three algorithms. Every algorithm is checked for valid paths (start to end, one step at a time, never through walls), unreachable ends and missing start or end cells. BFS and Dijkstra are also checked for finding the shortest path.
+
+The tests run automatically on GitHub Actions for every push and pull request to `main`.
 
 ---
 
@@ -109,6 +123,14 @@ AI-Pathfinding-Visualizer/
     │   └── MazeRenderer.java
     │
     └── Main.java
+
+src/test/java/
+    ├── algorithms/
+    │   └── PathfindingAlgorithmTest.java
+    │
+    └── maze/
+        ├── CellTest.java
+        └── MazeTest.java
 ```
 
 ---
@@ -117,6 +139,8 @@ AI-Pathfinding-Visualizer/
 
 - Java 21
 - Maven
+- JUnit 5
+- GitHub Actions
 - Object-Oriented Programming
 - Graph Traversal
 - Breadth-First Search

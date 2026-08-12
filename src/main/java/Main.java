@@ -3,6 +3,7 @@ import algorithms.BFS;
 import algorithms.DFS;
 import algorithms.Dijkstra;
 import algorithms.PathfindingAlgorithm;
+import analysis.AlgorithmComparison;
 import java.util.List;
 import java.util.Random;
 import maze.Cell;
@@ -14,7 +15,9 @@ import renderer.MazeRenderer;
 public class Main {
 
     private static final String USAGE = """
-            Usage: java Main [bfs|dfs|dijkstra|astar] [options]
+            Usage: java Main [bfs|dfs|dijkstra|astar|compare] [options]
+
+            compare runs every algorithm on the same maze and prints a table.
 
             Options:
               --random        Use a randomly generated maze
@@ -31,6 +34,11 @@ public class Main {
         } catch (IllegalArgumentException exception) {
             System.out.println(exception.getMessage());
             System.out.println(USAGE);
+            return;
+        }
+
+        if (options.algorithm().equalsIgnoreCase("compare")) {
+            compareAlgorithms(options);
             return;
         }
 
@@ -73,6 +81,24 @@ public class Main {
         System.out.println("Moves: " + (path.size() - 1));
 
         if (options.random()) {
+            System.out.println("Maze seed: " + options.seed());
+        }
+    }
+
+    private static void compareAlgorithms(Options options) {
+        List<PathfindingAlgorithm> algorithms =
+                List.of(new BFS(), new DFS(), new Dijkstra(), new AStar());
+
+        //Every algorithm gets its own fresh copy of the same maze
+        List<AlgorithmComparison.Result> results =
+                AlgorithmComparison.run(algorithms, () -> createMaze(options));
+
+        MazeRenderer.print(createMaze(options));
+        System.out.println();
+        System.out.print(AlgorithmComparison.formatTable(results));
+
+        if (options.random()) {
+            System.out.println();
             System.out.println("Maze seed: " + options.seed());
         }
     }

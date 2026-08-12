@@ -12,9 +12,23 @@ import java.util.Map;
 
 public abstract class PathfindingAlgorithm {
 
+    private boolean animate = true;
+
     public abstract String getName();
 
     public abstract List<Cell> findPathAnimated(Maze maze, long delayMilliseconds);
+
+    //Runs the same search without drawing any animation frames,
+    //so it can be timed and compared with the other algorithms
+    public List<Cell> findPath(Maze maze) {
+        animate = false;
+
+        try {
+            return findPathAnimated(maze, 0);
+        } finally {
+            animate = true;
+        }
+    }
 
     @Override
     public String toString() {
@@ -33,6 +47,10 @@ public abstract class PathfindingAlgorithm {
     protected void markVisited(Maze maze, Cell cell, long delayMilliseconds) {
         if (!cell.isStart() && !cell.isEnd()) {
             cell.setType(CellType.VISITED);
+        }
+
+        if (!animate) {
+            return;
         }
 
         clearConsole();

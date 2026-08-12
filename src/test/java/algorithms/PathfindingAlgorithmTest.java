@@ -1,6 +1,7 @@
 package algorithms;
 
 import maze.Cell;
+import maze.CellType;
 import maze.Maze;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,11 +23,11 @@ class PathfindingAlgorithmTest {
     private PrintStream originalOut;
 
     static Stream<PathfindingAlgorithm> allAlgorithms() {
-        return Stream.of(new BFS(), new DFS(), new Dijkstra());
+        return Stream.of(new BFS(), new DFS(), new Dijkstra(), new AStar());
     }
 
     static Stream<PathfindingAlgorithm> shortestPathAlgorithms() {
-        return Stream.of(new BFS(), new Dijkstra());
+        return Stream.of(new BFS(), new Dijkstra(), new AStar());
     }
 
     //The algorithms animate to the console; hide that output during tests
@@ -156,5 +157,15 @@ class PathfindingAlgorithmTest {
         assertEquals("BFS", new BFS().getName());
         assertEquals("DFS", new DFS().getName());
         assertEquals("Dijkstra", new Dijkstra().getName());
+        assertEquals("A*", new AStar().getName());
+    }
+
+    @Test
+    void manhattanDistanceCountsGridSteps() {
+        Cell from = new Cell(1, 2, CellType.EMPTY);
+        Cell to = new Cell(4, 0, CellType.EMPTY);
+
+        assertEquals(5, AStar.manhattanDistance(from, to));
+        assertEquals(0, AStar.manhattanDistance(from, from));
     }
 }

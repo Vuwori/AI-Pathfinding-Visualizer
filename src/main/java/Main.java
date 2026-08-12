@@ -1,3 +1,4 @@
+import algorithms.AStar;
 import algorithms.BFS;
 import algorithms.DFS;
 import algorithms.Dijkstra;
@@ -18,7 +19,7 @@ public class Main {
 
         if (algorithm == null) {
             System.out.println("Unknown algorithm: " + choice);
-            System.out.println("Usage: java Main [bfs|dfs|dijkstra]");
+            System.out.println("Usage: java Main [bfs|dfs|dijkstra|astar]");
             return;
         }
 
@@ -66,6 +67,7 @@ public class Main {
             case "bfs" -> new BFS();
             case "dfs" -> new DFS();
             case "dijkstra" -> new Dijkstra();
+            case "astar", "a*" -> new AStar();
             default -> null;
         };
     }

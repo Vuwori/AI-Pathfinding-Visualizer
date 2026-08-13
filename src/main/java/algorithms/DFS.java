@@ -23,9 +23,7 @@ public class DFS extends PathfindingAlgorithm {
     }
 
     @Override
-    public List<Cell> findPathAnimated(Maze maze, long delayMilliseconds) {
-
-        validateMaze(maze);
+    protected List<Cell> search(Maze maze, SearchListener listener) {
 
         Cell start = maze.getStartCell();
         Cell end = maze.getEndCell();
@@ -46,7 +44,7 @@ public class DFS extends PathfindingAlgorithm {
             }
 
             visited.add(current);
-            markVisited(maze, current, delayMilliseconds);
+            markVisited(maze, current, listener);
 
             if (current.equals(end)) {
                 return reconstructPath(previous, end);

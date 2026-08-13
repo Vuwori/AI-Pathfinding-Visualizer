@@ -3,31 +3,27 @@ package algorithms;
 import maze.Cell;
 import maze.CellType;
 import maze.Maze;
-import renderer.MazeRenderer;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public abstract class PathfindingAlgorithm {
 
-    private boolean animate = true;
-
     public abstract String getName();
 
-    public abstract List<Cell> findPathAnimated(Maze maze, long delayMilliseconds);
+    //The actual search; every explored cell must go through markVisited
+    protected abstract List<Cell> search(Maze maze, SearchListener listener);
 
-    //Runs the same search without drawing any animation frames,
-    //so it can be timed and compared with the other algorithms
     public List<Cell> findPath(Maze maze) {
-        animate = false;
+        return findPath(maze, SearchListener.NONE);
+    }
 
-        try {
-            return findPathAnimated(maze, 0);
-        } finally {
-            animate = true;
-        }
+    public List<Cell> findPath(Maze maze, SearchListener listener) {
+        validateMaze(maze);
+        return search(maze, Objects.requireNonNull(listener, "Listener cannot be null"));
     }
 
     @Override
@@ -43,19 +39,13 @@ public abstract class PathfindingAlgorithm {
         }
     }
 
-    //Mark a cell as VISITED and draw the next animation frame
-    protected void markVisited(Maze maze, Cell cell, long delayMilliseconds) {
+    //Mark a cell as VISITED and tell the listener about it
+    protected void markVisited(Maze maze, Cell cell, SearchListener listener) {
         if (!cell.isStart() && !cell.isEnd()) {
             cell.setType(CellType.VISITED);
         }
 
-        if (!animate) {
-            return;
-        }
-
-        clearConsole();
-        MazeRenderer.print(maze);
-        sleep(delayMilliseconds);
+        listener.onVisit(maze, cell);
     }
 
     protected List<Cell> reconstructPath(
@@ -73,22 +63,5 @@ public abstract class PathfindingAlgorithm {
 
         Collections.reverse(path);
         return path;
-    }
-
-    private void sleep(long delayMilliseconds) {
-        try {
-            Thread.sleep(delayMilliseconds);
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(
-                    getName() + " animation was interrupted.",
-                    exception
-            );
-        }
-    }
-
-    private void clearConsole() {
-        System.out.print("\033[H\033[2J");
-        System.out.flush();
     }
 }

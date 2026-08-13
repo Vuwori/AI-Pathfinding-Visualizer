@@ -20,9 +20,7 @@ public class BFS extends PathfindingAlgorithm {
     }
 
     @Override
-    public List<Cell> findPathAnimated(Maze maze, long delayMilliseconds) {
-
-        validateMaze(maze);
+    protected List<Cell> search(Maze maze, SearchListener listener) {
 
         Cell start = maze.getStartCell();
         Cell end = maze.getEndCell();
@@ -50,7 +48,7 @@ public class BFS extends PathfindingAlgorithm {
                     previous.put(neighbor, current);
                     queue.offer(neighbor);
 
-                    markVisited(maze, neighbor, delayMilliseconds);
+                    markVisited(maze, neighbor, listener);
                 }
             }
         }

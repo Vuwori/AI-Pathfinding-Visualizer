@@ -3,43 +3,28 @@ package algorithms;
 import maze.Cell;
 import maze.CellType;
 import maze.Maze;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.OutputStream;
-import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PathfindingAlgorithmTest {
 
-    private PrintStream originalOut;
-
     static Stream<PathfindingAlgorithm> allAlgorithms() {
-        return Stream.of(new BFS(), new DFS(), new Dijkstra(), new AStar());
+        return Algorithms.all().stream();
     }
 
     static Stream<PathfindingAlgorithm> shortestPathAlgorithms() {
         return Stream.of(new BFS(), new Dijkstra(), new AStar());
-    }
-
-    //The algorithms animate to the console; hide that output during tests
-    @BeforeEach
-    void silenceConsole() {
-        originalOut = System.out;
-        System.setOut(new PrintStream(OutputStream.nullOutputStream()));
-    }
-
-    @AfterEach
-    void restoreConsole() {
-        System.setOut(originalOut);
     }
 
     //The example maze from Main and the README
@@ -83,7 +68,7 @@ class PathfindingAlgorithmTest {
     void findsValidPathInExampleMaze(PathfindingAlgorithm algorithm) {
         Maze maze = exampleMaze();
 
-        assertValidPath(maze, algorithm.findPathAnimated(maze, 0));
+        assertValidPath(maze, algorithm.findPath(maze));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -91,7 +76,7 @@ class PathfindingAlgorithmTest {
     void findsShortestPathInExampleMaze(PathfindingAlgorithm algorithm) {
         Maze maze = exampleMaze();
 
-        List<Cell> path = algorithm.findPathAnimated(maze, 0);
+        List<Cell> path = algorithm.findPath(maze);
 
         assertEquals(18, path.size() - 1);
     }
@@ -109,7 +94,7 @@ class PathfindingAlgorithmTest {
         maze.setWall(1, 2);
         maze.setWall(1, 3);
 
-        List<Cell> path = algorithm.findPathAnimated(maze, 0);
+        List<Cell> path = algorithm.findPath(maze);
 
         assertValidPath(maze, path);
         assertEquals(4, path.size() - 1);
@@ -124,7 +109,7 @@ class PathfindingAlgorithmTest {
         maze.setWall(0, 1);
         maze.setEnd(0, 2);
 
-        assertTrue(algorithm.findPathAnimated(maze, 0).isEmpty());
+        assertTrue(algorithm.findPath(maze).isEmpty());
     }
 
     @ParameterizedTest(name = "{0}")
@@ -134,7 +119,7 @@ class PathfindingAlgorithmTest {
         maze.setStart(0, 0);
         maze.setEnd(0, 1);
 
-        List<Cell> path = algorithm.findPathAnimated(maze, 0);
+        List<Cell> path = algorithm.findPath(maze);
 
         assertEquals(List.of(maze.getCell(0, 0), maze.getCell(0, 1)), path);
     }
@@ -148,8 +133,8 @@ class PathfindingAlgorithmTest {
         Maze noStart = new Maze(2, 2);
         noStart.setEnd(1, 1);
 
-        assertThrows(IllegalStateException.class, () -> algorithm.findPathAnimated(noEnd, 0));
-        assertThrows(IllegalStateException.class, () -> algorithm.findPathAnimated(noStart, 0));
+        assertThrows(IllegalStateException.class, () -> algorithm.findPath(noEnd));
+        assertThrows(IllegalStateException.class, () -> algorithm.findPath(noStart));
     }
 
     @Test
@@ -167,5 +152,45 @@ class PathfindingAlgorithmTest {
 
         assertEquals(5, AStar.manhattanDistance(from, to));
         assertEquals(0, AStar.manhattanDistance(from, from));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("allAlgorithms")
+    void listenerSeesEveryExploredCell(PathfindingAlgorithm algorithm) {
+        Maze maze = exampleMaze();
+        List<Cell> seen = new ArrayList<>();
+
+        List<Cell> path = algorithm.findPath(maze, (searchedMaze, cell) -> {
+            assertSame(maze, searchedMaze);
+            seen.add(cell);
+        });
+
+        assertTrue(seen.contains(maze.getEndCell()), "The end should be reported when it is reached");
+        assertEquals(seen.size(), seen.stream().distinct().count(), "A cell was reported twice");
+
+        for (Cell cell : seen) {
+            if (!cell.isStart() && !cell.isEnd()) {
+                assertEquals(CellType.VISITED, cell.getType());
+            }
+        }
+
+        assertTrue(!path.isEmpty());
+    }
+
+    @Test
+    void algorithmsCanBeFoundByName() {
+        assertInstanceOf(BFS.class, Algorithms.byName("bfs").orElseThrow());
+        assertInstanceOf(Dijkstra.class, Algorithms.byName("DIJKSTRA").orElseThrow());
+        assertInstanceOf(AStar.class, Algorithms.byName("astar").orElseThrow());
+        assertInstanceOf(AStar.class, Algorithms.byName("a*").orElseThrow());
+        assertTrue(Algorithms.byName("teleport").isEmpty());
+    }
+
+    @Test
+    void everyAlgorithmHasAUniqueCommandName() {
+        List<String> names = Algorithms.all().stream().map(Algorithms::commandName).toList();
+
+        assertEquals(names.size(), names.stream().distinct().count());
+        names.forEach(name -> assertTrue(name.matches("[a-z]+"), "Bad command name " + name));
     }
 }

@@ -29,9 +29,7 @@ public class Dijkstra extends PathfindingAlgorithm {
     }
 
     @Override
-    public List<Cell> findPathAnimated(Maze maze, long delayMilliseconds) {
-
-        validateMaze(maze);
+    protected List<Cell> search(Maze maze, SearchListener listener) {
 
         Cell start = maze.getStartCell();
         Cell end = maze.getEndCell();
@@ -54,7 +52,7 @@ public class Dijkstra extends PathfindingAlgorithm {
                 continue;
             }
 
-            markVisited(maze, current, delayMilliseconds);
+            markVisited(maze, current, listener);
 
             if (current.equals(end)) {
                 return reconstructPath(previous, end);

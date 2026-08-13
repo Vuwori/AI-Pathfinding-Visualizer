@@ -1,7 +1,4 @@
-import algorithms.AStar;
-import algorithms.BFS;
-import algorithms.DFS;
-import algorithms.Dijkstra;
+import algorithms.Algorithms;
 import algorithms.PathfindingAlgorithm;
 import analysis.AlgorithmComparison;
 import java.util.List;
@@ -10,6 +7,7 @@ import maze.Cell;
 import maze.CellType;
 import maze.Maze;
 import maze.MazeGenerator;
+import renderer.ConsoleAnimation;
 import renderer.MazeRenderer;
 
 public class Main {
@@ -42,7 +40,7 @@ public class Main {
             return;
         }
 
-        PathfindingAlgorithm algorithm = createAlgorithm(options.algorithm());
+        PathfindingAlgorithm algorithm = Algorithms.byName(options.algorithm()).orElse(null);
 
         if (algorithm == null) {
             System.out.println("Unknown algorithm: " + options.algorithm());
@@ -53,7 +51,7 @@ public class Main {
         Maze maze = createMaze(options);
 
         //Run the animated search
-        List<Cell> path = algorithm.findPathAnimated(maze, options.delay());
+        List<Cell> path = algorithm.findPath(maze, new ConsoleAnimation(options.delay()));
 
         //Stop if no path was found
         if (path.isEmpty()) {
@@ -86,12 +84,9 @@ public class Main {
     }
 
     private static void compareAlgorithms(Options options) {
-        List<PathfindingAlgorithm> algorithms =
-                List.of(new BFS(), new DFS(), new Dijkstra(), new AStar());
-
         //Every algorithm gets its own fresh copy of the same maze
         List<AlgorithmComparison.Result> results =
-                AlgorithmComparison.run(algorithms, () -> createMaze(options));
+                AlgorithmComparison.run(Algorithms.all(), () -> createMaze(options));
 
         MazeRenderer.print(createMaze(options));
         System.out.println();
@@ -101,16 +96,6 @@ public class Main {
             System.out.println();
             System.out.println("Maze seed: " + options.seed());
         }
-    }
-
-    private static PathfindingAlgorithm createAlgorithm(String name) {
-        return switch (name.toLowerCase()) {
-            case "bfs" -> new BFS();
-            case "dfs" -> new DFS();
-            case "dijkstra" -> new Dijkstra();
-            case "astar", "a*" -> new AStar();
-            default -> null;
-        };
     }
 
     private static Maze createMaze(Options options) {

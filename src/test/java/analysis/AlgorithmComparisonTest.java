@@ -1,9 +1,7 @@
 package analysis;
 
-import algorithms.AStar;
+import algorithms.Algorithms;
 import algorithms.BFS;
-import algorithms.DFS;
-import algorithms.Dijkstra;
 import algorithms.PathfindingAlgorithm;
 import maze.Maze;
 import maze.MazeGenerator;
@@ -24,8 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AlgorithmComparisonTest {
 
-    private static final List<PathfindingAlgorithm> ALGORITHMS =
-            List.of(new BFS(), new DFS(), new Dijkstra(), new AStar());
+    private static final List<PathfindingAlgorithm> ALGORITHMS = Algorithms.all();
 
     private static Map<String, AlgorithmComparison.Result> compare(long seed) {
         return AlgorithmComparison.run(

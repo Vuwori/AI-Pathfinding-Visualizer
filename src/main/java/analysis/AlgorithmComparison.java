@@ -2,7 +2,6 @@ package analysis;
 
 import algorithms.PathfindingAlgorithm;
 import maze.Cell;
-import maze.CellType;
 import maze.Maze;
 
 import java.util.ArrayList;
@@ -40,38 +39,24 @@ public class AlgorithmComparison {
 
     private static Result measure(PathfindingAlgorithm algorithm, Supplier<Maze> mazeFactory) {
         long fastest = Long.MAX_VALUE;
-        Maze maze = null;
         List<Cell> path = List.of();
+        int[] explored = new int[1];
 
         for (int run = 0; run < TIMED_RUNS; run++) {
-            maze = mazeFactory.get();
+            Maze maze = mazeFactory.get();
+            explored[0] = 0;
 
             long started = System.nanoTime();
-            path = algorithm.findPath(maze);
+            path = algorithm.findPath(maze, (searchedMaze, cell) -> explored[0]++);
             fastest = Math.min(fastest, System.nanoTime() - started);
         }
 
         return new Result(
                 algorithm.getName(),
                 path.size() - 1,
-                countExplored(maze),
+                explored[0],
                 fastest / 1_000_000.0
         );
-    }
-
-    //Explored cells are marked VISITED by the algorithms; start and end never are
-    private static int countExplored(Maze maze) {
-        int count = 0;
-
-        for (int row = 0; row < maze.getRows(); row++) {
-            for (int column = 0; column < maze.getColumns(); column++) {
-                if (maze.getCell(row, column).getType() == CellType.VISITED) {
-                    count++;
-                }
-            }
-        }
-
-        return count;
     }
 
     public static String formatTable(List<Result> results) {

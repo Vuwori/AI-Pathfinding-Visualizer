@@ -17,7 +17,7 @@ public class MazeRenderer {
                     case WALL -> System.out.print("#");
                     case START -> System.out.print("S");
                     case END -> System.out.print("E");
-                    case EMPTY -> System.out.print(".");
+                    case EMPTY -> System.out.print(cell.isWeighted() ? "~" : ".");
                     case VISITED -> System.out.print("*");
                     case PATH -> System.out.print("P");
                 }

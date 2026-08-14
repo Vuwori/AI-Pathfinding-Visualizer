@@ -50,4 +50,31 @@ class CellTest {
         Cell cell = new Cell(0, 0, CellType.EMPTY);
         assertThrows(NullPointerException.class, () -> cell.setType(null));
     }
+
+    @Test
+    void cellsStartWithDefaultWeight() {
+        Cell cell = new Cell(0, 0, CellType.EMPTY);
+
+        assertEquals(Cell.DEFAULT_WEIGHT, cell.getWeight());
+        assertFalse(cell.isWeighted());
+    }
+
+    @Test
+    void weightSurvivesTypeChanges() {
+        Cell cell = new Cell(0, 0, CellType.EMPTY);
+        cell.setWeight(5);
+
+        cell.setType(CellType.VISITED);
+        cell.setType(CellType.EMPTY);
+
+        assertEquals(5, cell.getWeight());
+        assertTrue(cell.isWeighted());
+    }
+
+    @Test
+    void weightBelowOneIsRejected() {
+        Cell cell = new Cell(0, 0, CellType.EMPTY);
+
+        assertThrows(IllegalArgumentException.class, () -> cell.setWeight(0));
+    }
 }

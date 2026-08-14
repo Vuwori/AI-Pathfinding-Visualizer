@@ -21,6 +21,7 @@ public class Main {
               --random        Use a randomly generated maze
               --seed=N        Seed for the random maze (implies --random)
               --size=RxC      Size of the random maze, e.g. 21x41 (default 15x31)
+              --mud=F         Share of the random maze covered in mud, 0 to 1 (default 0)
               --delay=MS      Milliseconds between animation frames (default 100)""";
 
     public static void main(String[] args) {
@@ -77,6 +78,7 @@ public class Main {
         System.out.println();
         System.out.println("Path cells: " + path.size());
         System.out.println("Moves: " + (path.size() - 1));
+        System.out.println("Path cost: " + Maze.pathCost(path));
 
         if (options.random()) {
             System.out.println("Maze seed: " + options.seed());
@@ -100,7 +102,8 @@ public class Main {
 
     private static Maze createMaze(Options options) {
         if (options.random()) {
-            return new MazeGenerator(options.seed()).generate(options.rows(), options.columns());
+            return new MazeGenerator(options.seed(), options.mud())
+                    .generate(options.rows(), options.columns());
         }
 
         return exampleMaze();
@@ -127,6 +130,7 @@ public class Main {
             long seed,
             int rows,
             int columns,
+            double mud,
             long delay
     ) {
 
@@ -136,6 +140,7 @@ public class Main {
             Long seed = null;
             int rows = 15;
             int columns = 31;
+            double mud = 0;
             long delay = 100;
 
             for (String arg : args) {
@@ -152,6 +157,9 @@ public class Main {
                         }
                         rows = Integer.parseInt(size[0]);
                         columns = Integer.parseInt(size[1]);
+                    } else if (arg.startsWith("--mud=")) {
+                        mud = Double.parseDouble(value(arg));
+                        random = true;
                     } else if (arg.startsWith("--delay=")) {
                         delay = Long.parseLong(value(arg));
                     } else if (arg.startsWith("--")) {
@@ -171,6 +179,10 @@ public class Main {
                 );
             }
 
+            if (mud < 0 || mud > 1) {
+                throw new IllegalArgumentException("Mud must be between 0 and 1");
+            }
+
             if (delay < 0) {
                 throw new IllegalArgumentException("Delay cannot be negative");
             }
@@ -178,7 +190,7 @@ public class Main {
             //Pick a seed when none is given, so the maze can be reproduced later
             long finalSeed = seed != null ? seed : new Random().nextLong();
 
-            return new Options(algorithm, random, finalSeed, rows, columns, delay);
+            return new Options(algorithm, random, finalSeed, rows, columns, mud, delay);
         }
 
         private static String value(String arg) {

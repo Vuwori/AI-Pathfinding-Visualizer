@@ -50,6 +50,29 @@ public class Maze {
         }
 
         cell.setType(CellType.WALL);
+        cell.setWeight(Cell.DEFAULT_WEIGHT);
+    }
+
+    //Make a cell more expensive to walk through, e.g. mud
+    public void setWeight(int row, int column, int weight) {
+        Cell cell = getCell(row, column);
+
+        if (cell.getType() == CellType.WALL) {
+            throw new IllegalStateException("Walls cannot have a weight");
+        }
+
+        cell.setWeight(weight);
+    }
+
+    //Total cost of walking a path: every step costs the weight of the cell it enters
+    public static int pathCost(List<Cell> path) {
+        int cost = 0;
+
+        for (int i = 1; i < path.size(); i++) {
+            cost += path.get(i).getWeight();
+        }
+
+        return cost;
     }
 
     public void removeWall(int row, int column) {

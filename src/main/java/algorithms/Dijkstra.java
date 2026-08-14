@@ -14,11 +14,9 @@ import java.util.Set;
 
 //Dijkstra's algorithm: always expands the cell with the lowest known
 //distance from the start, so the first time the end is reached the
-//path is guaranteed to be the cheapest one.
+//path is guaranteed to be the cheapest one. Unlike BFS it takes cell
+//weights into account, so it will walk around mud when that is cheaper.
 public class Dijkstra extends PathfindingAlgorithm {
-
-    //Every move currently costs the same; change this to support weighted cells
-    private static final int MOVE_COST = 1;
 
     private record Entry(Cell cell, int distance) {
     }
@@ -64,7 +62,7 @@ public class Dijkstra extends PathfindingAlgorithm {
                     continue;
                 }
 
-                int newDistance = distances.get(current) + MOVE_COST;
+                int newDistance = distances.get(current) + neighbor.getWeight();
 
                 if (newDistance < distances.getOrDefault(neighbor, Integer.MAX_VALUE)) {
                     distances.put(neighbor, newDistance);

@@ -27,6 +27,21 @@ class PathfindingAlgorithmTest {
         return Stream.of(new BFS(), new Dijkstra(), new AStar());
     }
 
+    static Stream<PathfindingAlgorithm> weightedAlgorithms() {
+        return Stream.of(new Dijkstra(), new AStar());
+    }
+
+    //S ~ ~ E      straight through the mud: 3 moves, cost 5 + 5 + 1 = 11
+    //. . . .      around it:                5 moves, cost 5
+    private static Maze muddyMaze() {
+        Maze maze = new Maze(2, 4);
+        maze.setStart(0, 0);
+        maze.setEnd(0, 3);
+        maze.setWeight(0, 1, 5);
+        maze.setWeight(0, 2, 5);
+        return maze;
+    }
+
     //The example maze from Main and the README
     private static Maze exampleMaze() {
         Maze maze = new Maze(7, 17);
@@ -192,5 +207,43 @@ class PathfindingAlgorithmTest {
 
         assertEquals(names.size(), names.stream().distinct().count());
         names.forEach(name -> assertTrue(name.matches("[a-z]+"), "Bad command name " + name));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("weightedAlgorithms")
+    void weightedAlgorithmsWalkAroundMud(PathfindingAlgorithm algorithm) {
+        Maze maze = muddyMaze();
+
+        List<Cell> path = algorithm.findPath(maze);
+
+        assertValidPath(maze, path);
+        assertEquals(5, path.size() - 1);
+        assertEquals(5, Maze.pathCost(path));
+    }
+
+    @Test
+    void bfsIgnoresWeights() {
+        Maze maze = muddyMaze();
+
+        List<Cell> path = new BFS().findPath(maze);
+
+        assertEquals(3, path.size() - 1);
+        assertEquals(11, Maze.pathCost(path));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("weightedAlgorithms")
+    void weightedAlgorithmsTakeMudWhenItIsCheaper(PathfindingAlgorithm algorithm) {
+        //S ~ E
+        //. # .     the only detour is blocked, so the mud is the cheapest route
+        Maze maze = new Maze(2, 3);
+        maze.setStart(0, 0);
+        maze.setEnd(0, 2);
+        maze.setWeight(0, 1, 5);
+        maze.setWall(1, 1);
+
+        List<Cell> path = algorithm.findPath(maze);
+
+        assertEquals(6, Maze.pathCost(path));
     }
 }

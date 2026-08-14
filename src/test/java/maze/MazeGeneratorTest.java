@@ -129,5 +129,44 @@ class MazeGeneratorTest {
         assertThrows(IllegalArgumentException.class, () -> generator.generate(4, 10));
         assertThrows(IllegalArgumentException.class, () -> generator.generate(10, 3));
         assertThrows(IllegalArgumentException.class, () -> new MazeGenerator(new Random(), 1.5));
+        assertThrows(IllegalArgumentException.class, () -> new MazeGenerator(1, -0.1));
+    }
+
+    @Test
+    void mudCoversRoughlyTheRequestedShare() {
+        Maze maze = new MazeGenerator(11, 0.25).generate(31, 61);
+
+        int open = 0;
+        int mud = 0;
+
+        for (int row = 0; row < 31; row++) {
+            for (int column = 0; column < 61; column++) {
+                Cell cell = maze.getCell(row, column);
+
+                if (cell.isWalkable()) {
+                    open++;
+                }
+
+                if (cell.isWeighted()) {
+                    mud++;
+                    assertEquals(MazeGenerator.MUD_WEIGHT, cell.getWeight());
+                    assertTrue(cell.isWalkable(), "Walls cannot be mud");
+                }
+            }
+        }
+
+        assertEquals(0.25, (double) mud / open, 0.02);
+        assertTrue(!maze.getStartCell().isWeighted() && !maze.getEndCell().isWeighted());
+    }
+
+    @Test
+    void noMudByDefault() {
+        Maze maze = new MazeGenerator(11).generate(21, 21);
+
+        for (int row = 0; row < 21; row++) {
+            for (int column = 0; column < 21; column++) {
+                assertTrue(!maze.getCell(row, column).isWeighted());
+            }
+        }
     }
 }

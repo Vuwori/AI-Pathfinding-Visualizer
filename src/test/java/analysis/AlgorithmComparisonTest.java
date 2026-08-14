@@ -99,4 +99,21 @@ class AlgorithmComparisonTest {
             assertTrue(table.contains(algorithm.getName()), "Missing " + algorithm.getName());
         }
     }
+
+    @ParameterizedTest(name = "seed {0}")
+    @ValueSource(longs = {4, 8, 15, 16, 23})
+    void weightedAlgorithmsFindTheCheapestPathThroughMud(long seed) {
+        Map<String, AlgorithmComparison.Result> results = AlgorithmComparison.run(
+                        ALGORITHMS,
+                        () -> new MazeGenerator(seed, 0.3).generate(21, 41)
+                )
+                .stream()
+                .collect(Collectors.toMap(AlgorithmComparison.Result::algorithm, Function.identity()));
+
+        int cheapest = results.get("Dijkstra").cost();
+
+        assertEquals(cheapest, results.get("A*").cost());
+        assertTrue(results.get("BFS").cost() >= cheapest);
+        assertTrue(results.get("DFS").cost() >= cheapest);
+    }
 }

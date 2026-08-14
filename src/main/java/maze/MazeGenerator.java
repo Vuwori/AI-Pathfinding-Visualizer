@@ -13,9 +13,14 @@ import java.util.Random;
 //it gets stuck. The result is a "perfect" maze with exactly one route
 //between any two rooms. A few extra walls are then removed to create
 //loops, so the algorithms have more than one route to choose from.
+//Optionally, patches of mud are spread over the open cells.
 public class MazeGenerator {
 
     public static final int MINIMUM_SIZE = 5;
+
+    public static final int MUD_WEIGHT = 5;
+
+    private static final int LARGEST_MUD_PATCH = 8;
 
     private static final double DEFAULT_LOOP_CHANCE = 0.1;
 
@@ -23,20 +28,28 @@ public class MazeGenerator {
 
     private final Random random;
     private final double loopChance;
+    private final double mudCoverage;
 
     public MazeGenerator(long seed) {
-        this(new Random(seed), DEFAULT_LOOP_CHANCE);
+        this(seed, 0);
+    }
+
+    public MazeGenerator(long seed, double mudCoverage) {
+        this(new Random(seed), DEFAULT_LOOP_CHANCE, mudCoverage);
     }
 
     public MazeGenerator(Random random, double loopChance) {
-        if (loopChance < 0 || loopChance > 1) {
-            throw new IllegalArgumentException(
-                    "Loop chance must be between 0 and 1"
-            );
-        }
+        this(random, loopChance, 0);
+    }
+
+    //mudCoverage is the rough share of open cells that become mud
+    public MazeGenerator(Random random, double loopChance, double mudCoverage) {
+        requireFraction(loopChance, "Loop chance");
+        requireFraction(mudCoverage, "Mud coverage");
 
         this.random = random;
         this.loopChance = loopChance;
+        this.mudCoverage = mudCoverage;
     }
 
     //Start is placed in the top-left room, end in the bottom-right room
@@ -56,6 +69,8 @@ public class MazeGenerator {
 
         maze.setStart(1, 1);
         maze.setEnd(lastRoomIndex(rows), lastRoomIndex(columns));
+
+        addMud(maze);
 
         return maze;
     }
@@ -133,6 +148,62 @@ public class MazeGenerator {
                     maze.removeWall(row, column);
                 }
             }
+        }
+    }
+
+    //Grow small patches of mud from random open cells until enough is covered
+    private void addMud(Maze maze) {
+        List<Cell> openCells = new ArrayList<>();
+
+        for (int row = 0; row < maze.getRows(); row++) {
+            for (int column = 0; column < maze.getColumns(); column++) {
+                Cell cell = maze.getCell(row, column);
+
+                if (cell.getType() == CellType.EMPTY) {
+                    openCells.add(cell);
+                }
+            }
+        }
+
+        if (openCells.isEmpty()) {
+            return;
+        }
+
+        int target = (int) Math.round(openCells.size() * mudCoverage);
+        int covered = 0;
+
+        while (covered < target) {
+            Cell seed = openCells.get(random.nextInt(openCells.size()));
+            covered += growMudPatch(maze, seed, Math.min(target - covered, 1 + random.nextInt(LARGEST_MUD_PATCH)));
+        }
+    }
+
+    private int growMudPatch(Maze maze, Cell seed, int size) {
+        Deque<Cell> frontier = new ArrayDeque<>();
+        frontier.add(seed);
+        int added = 0;
+
+        while (!frontier.isEmpty() && added < size) {
+            Cell cell = frontier.poll();
+
+            if (cell.isWeighted() || cell.getType() != CellType.EMPTY) {
+                continue;
+            }
+
+            cell.setWeight(MUD_WEIGHT);
+            added++;
+
+            List<Cell> neighbors = maze.getNeighbors(cell);
+            Collections.shuffle(neighbors, random);
+            frontier.addAll(neighbors);
+        }
+
+        return added;
+    }
+
+    private static void requireFraction(double value, String name) {
+        if (value < 0 || value > 1) {
+            throw new IllegalArgumentException(name + " must be between 0 and 1");
         }
     }
 

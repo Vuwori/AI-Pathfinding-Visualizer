@@ -18,8 +18,6 @@ import java.util.Set;
 //the path found is still the shortest one.
 public class AStar extends PathfindingAlgorithm {
 
-    private static final int MOVE_COST = 1;
-
     //estimate = distance so far + heuristic; ties go to the cell closer to the end
     private record Entry(Cell cell, int distance, int estimate, int heuristic) {
     }
@@ -68,7 +66,7 @@ public class AStar extends PathfindingAlgorithm {
                     continue;
                 }
 
-                int newDistance = distances.get(current) + MOVE_COST;
+                int newDistance = distances.get(current) + neighbor.getWeight();
 
                 if (newDistance < distances.getOrDefault(neighbor, Integer.MAX_VALUE)) {
                     distances.put(neighbor, newDistance);
@@ -83,7 +81,8 @@ public class AStar extends PathfindingAlgorithm {
         return Collections.emptyList();
     }
 
-    //Never overestimates on a 4-directional grid, so A* stays optimal
+    //Every step costs at least 1, so this never overestimates the
+    //remaining cost and A* still finds the cheapest path
     static int manhattanDistance(Cell from, Cell to) {
         return Math.abs(from.getRow() - to.getRow())
                 + Math.abs(from.getColumn() - to.getColumn());

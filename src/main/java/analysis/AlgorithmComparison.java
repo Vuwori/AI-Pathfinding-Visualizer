@@ -17,7 +17,7 @@ public class AlgorithmComparison {
     //which filters out JIT warm-up and other one-off noise
     private static final int TIMED_RUNS = 5;
 
-    public record Result(String algorithm, int moves, int cellsExplored, double milliseconds) {
+    public record Result(String algorithm, int moves, int cost, int cellsExplored, double milliseconds) {
 
         public boolean foundPath() {
             return moves >= 0;
@@ -54,23 +54,25 @@ public class AlgorithmComparison {
         return new Result(
                 algorithm.getName(),
                 path.size() - 1,
+                Maze.pathCost(path),
                 explored[0],
                 fastest / 1_000_000.0
         );
     }
 
     public static String formatTable(List<Result> results) {
-        String format = "| %-9s | %11s | %14s | %9s |%n";
+        String format = "| %-9s | %11s | %9s | %14s | %9s |%n";
         StringBuilder table = new StringBuilder();
 
-        table.append(String.format(format, "Algorithm", "Path length", "Cells explored", "Time (ms)"));
-        table.append(String.format("|-----------|-------------|----------------|-----------|%n"));
+        table.append(String.format(format, "Algorithm", "Path length", "Path cost", "Cells explored", "Time (ms)"));
+        table.append(String.format("|-----------|-------------|-----------|----------------|-----------|%n"));
 
         for (Result result : results) {
             table.append(String.format(
                     format,
                     result.algorithm(),
                     result.foundPath() ? String.valueOf(result.moves()) : "no path",
+                    result.foundPath() ? String.valueOf(result.cost()) : "-",
                     result.cellsExplored(),
                     String.format(Locale.ROOT, "%.3f", result.milliseconds())
             ));

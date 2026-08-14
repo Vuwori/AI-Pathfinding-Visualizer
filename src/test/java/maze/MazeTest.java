@@ -150,4 +150,41 @@ class MazeTest {
         assertEquals(CellType.EMPTY, maze.getCell(0, 3).getType());
         assertEquals(CellType.END, maze.getCell(0, 4).getType());
     }
+
+    @Test
+    void wallsCannotBeWeighted() {
+        Maze maze = new Maze(2, 2);
+        maze.setWall(0, 1);
+
+        assertThrows(IllegalStateException.class, () -> maze.setWeight(0, 1, 5));
+    }
+
+    @Test
+    void turningMudIntoWallResetsWeight() {
+        Maze maze = new Maze(2, 2);
+        maze.setWeight(0, 1, 5);
+        maze.setWall(0, 1);
+        maze.removeWall(0, 1);
+
+        assertEquals(Cell.DEFAULT_WEIGHT, maze.getCell(0, 1).getWeight());
+    }
+
+    @Test
+    void pathCostSumsWeightsOfEnteredCells() {
+        Maze maze = new Maze(1, 4);
+        maze.setWeight(0, 0, 9);
+        maze.setWeight(0, 2, 5);
+
+        List<Cell> path = List.of(
+                maze.getCell(0, 0),
+                maze.getCell(0, 1),
+                maze.getCell(0, 2),
+                maze.getCell(0, 3)
+        );
+
+        //The start cell is never entered, so its weight does not count
+        assertEquals(1 + 5 + 1, Maze.pathCost(path));
+        assertEquals(0, Maze.pathCost(List.of(maze.getCell(0, 0))));
+        assertEquals(0, Maze.pathCost(List.of()));
+    }
 }

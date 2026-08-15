@@ -61,11 +61,20 @@ public class AlgorithmComparison {
     }
 
     public static String formatTable(List<Result> results) {
-        String format = "| %-9s | %11s | %9s | %14s | %9s |%n";
+        //The first column grows to fit the longest algorithm name
+        int nameWidth = "Algorithm".length();
+        for (Result result : results) {
+            nameWidth = Math.max(nameWidth, result.algorithm().length());
+        }
+
+        String format = "| %-" + nameWidth + "s | %11s | %9s | %14s | %9s |%n";
         StringBuilder table = new StringBuilder();
 
         table.append(String.format(format, "Algorithm", "Path length", "Path cost", "Cells explored", "Time (ms)"));
-        table.append(String.format("|-----------|-------------|-----------|----------------|-----------|%n"));
+        table.append(String.format(
+                "|%s|-------------|-----------|----------------|-----------|%n",
+                "-".repeat(nameWidth + 2)
+        ));
 
         for (Result result : results) {
             table.append(String.format(

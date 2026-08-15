@@ -13,7 +13,7 @@ import renderer.MazeRenderer;
 public class Main {
 
     private static final String USAGE = """
-            Usage: java Main [bfs|dfs|dijkstra|astar|compare] [options]
+            Usage: java Main [bfs|dfs|dijkstra|astar|greedy|compare] [options]
 
             compare runs every algorithm on the same maze and prints a table.
 

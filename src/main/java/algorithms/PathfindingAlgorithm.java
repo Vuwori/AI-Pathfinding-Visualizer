@@ -14,6 +14,11 @@ public abstract class PathfindingAlgorithm {
 
     public abstract String getName();
 
+    //Short lowercase name used on the command line, e.g. "astar"
+    public String getCommandName() {
+        return getName().toLowerCase().replace("*", "star");
+    }
+
     //The actual search; every explored cell must go through markVisited
     protected abstract List<Cell> search(Maze maze, SearchListener listener);
 
@@ -46,6 +51,12 @@ public abstract class PathfindingAlgorithm {
         }
 
         listener.onVisit(maze, cell);
+    }
+
+    //Number of steps between two cells when walls are ignored
+    protected static int manhattanDistance(Cell from, Cell to) {
+        return Math.abs(from.getRow() - to.getRow())
+                + Math.abs(from.getColumn() - to.getColumn());
     }
 
     protected List<Cell> reconstructPath(

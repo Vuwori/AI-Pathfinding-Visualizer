@@ -3,6 +3,7 @@ package algorithms;
 import maze.Cell;
 import maze.CellType;
 import maze.Maze;
+import maze.MazeGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -158,6 +159,7 @@ class PathfindingAlgorithmTest {
         assertEquals("DFS", new DFS().getName());
         assertEquals("Dijkstra", new Dijkstra().getName());
         assertEquals("A*", new AStar().getName());
+        assertEquals("Greedy Best-First", new GreedyBestFirst().getName());
     }
 
     @Test
@@ -165,8 +167,8 @@ class PathfindingAlgorithmTest {
         Cell from = new Cell(1, 2, CellType.EMPTY);
         Cell to = new Cell(4, 0, CellType.EMPTY);
 
-        assertEquals(5, AStar.manhattanDistance(from, to));
-        assertEquals(0, AStar.manhattanDistance(from, from));
+        assertEquals(5, PathfindingAlgorithm.manhattanDistance(from, to));
+        assertEquals(0, PathfindingAlgorithm.manhattanDistance(from, from));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -198,12 +200,13 @@ class PathfindingAlgorithmTest {
         assertInstanceOf(Dijkstra.class, Algorithms.byName("DIJKSTRA").orElseThrow());
         assertInstanceOf(AStar.class, Algorithms.byName("astar").orElseThrow());
         assertInstanceOf(AStar.class, Algorithms.byName("a*").orElseThrow());
+        assertInstanceOf(GreedyBestFirst.class, Algorithms.byName("greedy").orElseThrow());
         assertTrue(Algorithms.byName("teleport").isEmpty());
     }
 
     @Test
     void everyAlgorithmHasAUniqueCommandName() {
-        List<String> names = Algorithms.all().stream().map(Algorithms::commandName).toList();
+        List<String> names = Algorithms.all().stream().map(PathfindingAlgorithm::getCommandName).toList();
 
         assertEquals(names.size(), names.stream().distinct().count());
         names.forEach(name -> assertTrue(name.matches("[a-z]+"), "Bad command name " + name));
@@ -245,5 +248,27 @@ class PathfindingAlgorithmTest {
         List<Cell> path = algorithm.findPath(maze);
 
         assertEquals(6, Maze.pathCost(path));
+    }
+
+    @Test
+    void greedyIsFastButNotAlwaysShortest() {
+        int longerPaths = 0;
+
+        for (long seed = 1; seed <= 20; seed++) {
+            Maze maze = new MazeGenerator(seed).generate(21, 41);
+
+            List<Cell> greedyPath = new GreedyBestFirst().findPath(maze);
+            maze.clearSearchResults();
+            List<Cell> shortestPath = new BFS().findPath(maze);
+
+            assertValidPath(maze, greedyPath);
+            assertTrue(greedyPath.size() >= shortestPath.size());
+
+            if (greedyPath.size() > shortestPath.size()) {
+                longerPaths++;
+            }
+        }
+
+        assertTrue(longerPaths > 0, "Greedy should take a detour in at least one maze");
     }
 }

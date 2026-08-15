@@ -42,6 +42,8 @@ public class AStar extends PathfindingAlgorithm {
         Map<Cell, Cell> previous = new HashMap<>();
 
         distances.put(start, 0);
+        //Every step costs at least 1, so the Manhattan distance never
+        //overestimates the remaining cost and A* still finds the cheapest path
         int startHeuristic = manhattanDistance(start, end);
         queue.offer(new Entry(start, 0, startHeuristic, startHeuristic));
 
@@ -79,12 +81,5 @@ public class AStar extends PathfindingAlgorithm {
         }
 
         return Collections.emptyList();
-    }
-
-    //Every step costs at least 1, so this never overestimates the
-    //remaining cost and A* still finds the cheapest path
-    static int manhattanDistance(Cell from, Cell to) {
-        return Math.abs(from.getRow() - to.getRow())
-                + Math.abs(from.getColumn() - to.getColumn());
     }
 }

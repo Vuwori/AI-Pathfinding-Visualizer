@@ -11,7 +11,7 @@ public final class Algorithms {
     }
 
     public static List<PathfindingAlgorithm> all() {
-        return List.of(new BFS(), new DFS(), new Dijkstra(), new AStar());
+        return List.of(new BFS(), new DFS(), new Dijkstra(), new AStar(), new GreedyBestFirst());
     }
 
     //Accepts the display name or a short command-line name, ignoring case
@@ -19,13 +19,8 @@ public final class Algorithms {
         String wanted = name.toLowerCase();
 
         return all().stream()
-                .filter(algorithm -> commandName(algorithm).equals(wanted)
+                .filter(algorithm -> algorithm.getCommandName().equals(wanted)
                         || algorithm.getName().toLowerCase().equals(wanted))
                 .findFirst();
-    }
-
-    //"A*" becomes "astar", "Dijkstra" becomes "dijkstra"
-    public static String commandName(PathfindingAlgorithm algorithm) {
-        return algorithm.getName().toLowerCase().replace("*", "star");
     }
 }

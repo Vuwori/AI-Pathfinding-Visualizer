@@ -11,7 +11,14 @@ public final class Algorithms {
     }
 
     public static List<PathfindingAlgorithm> all() {
-        return List.of(new BFS(), new DFS(), new Dijkstra(), new AStar(), new GreedyBestFirst());
+        return List.of(
+                new BFS(),
+                new DFS(),
+                new Dijkstra(),
+                new AStar(),
+                new GreedyBestFirst(),
+                new BidirectionalBFS()
+        );
     }
 
     //Accepts the display name or a short command-line name, ignoring case

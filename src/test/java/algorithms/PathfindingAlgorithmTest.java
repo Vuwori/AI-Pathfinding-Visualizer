@@ -7,6 +7,7 @@ import maze.MazeGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,7 @@ class PathfindingAlgorithmTest {
     }
 
     static Stream<PathfindingAlgorithm> shortestPathAlgorithms() {
-        return Stream.of(new BFS(), new Dijkstra(), new AStar());
+        return Stream.of(new BFS(), new Dijkstra(), new AStar(), new BidirectionalBFS());
     }
 
     static Stream<PathfindingAlgorithm> weightedAlgorithms() {
@@ -160,6 +161,7 @@ class PathfindingAlgorithmTest {
         assertEquals("Dijkstra", new Dijkstra().getName());
         assertEquals("A*", new AStar().getName());
         assertEquals("Greedy Best-First", new GreedyBestFirst().getName());
+        assertEquals("Bidirectional BFS", new BidirectionalBFS().getName());
     }
 
     @Test
@@ -270,5 +272,39 @@ class PathfindingAlgorithmTest {
         }
 
         assertTrue(longerPaths > 0, "Greedy should take a detour in at least one maze");
+    }
+
+    @ParameterizedTest(name = "seed {0}")
+    @ValueSource(longs = {1, 2, 3, 5, 8, 13, 21, 34})
+    void bidirectionalMatchesBfsOnGeneratedMazes(long seed) {
+        Maze maze = new MazeGenerator(seed).generate(21, 41);
+
+        List<Cell> bidirectionalPath = new BidirectionalBFS().findPath(maze);
+        maze.clearSearchResults();
+        List<Cell> bfsPath = new BFS().findPath(maze);
+
+        assertValidPath(maze, bidirectionalPath);
+        assertEquals(bfsPath.size(), bidirectionalPath.size());
+    }
+
+    @Test
+    void bidirectionalExploresLessOnOpenGrid() {
+        int[] bfsExplored = new int[1];
+        int[] bidirectionalExplored = new int[1];
+
+        //Two small search areas around start and end instead of one big one
+        Maze maze = new Maze(41, 41);
+        maze.setStart(20, 5);
+        maze.setEnd(20, 35);
+        new BFS().findPath(maze, (searched, cell) -> bfsExplored[0]++);
+
+        maze.clearSearchResults();
+        new BidirectionalBFS().findPath(maze, (searched, cell) -> bidirectionalExplored[0]++);
+
+        assertTrue(
+                bidirectionalExplored[0] * 4 < bfsExplored[0] * 3,
+                "Expected at least a quarter fewer cells, got "
+                        + bidirectionalExplored[0] + " vs " + bfsExplored[0]
+        );
     }
 }

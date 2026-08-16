@@ -1,12 +1,15 @@
 import algorithms.Algorithms;
 import algorithms.PathfindingAlgorithm;
 import analysis.AlgorithmComparison;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Random;
 import maze.Cell;
 import maze.CellType;
 import maze.Maze;
 import maze.MazeGenerator;
+import maze.MazeParser;
 import renderer.ConsoleAnimation;
 import renderer.MazeRenderer;
 
@@ -18,6 +21,7 @@ public class Main {
             compare runs every algorithm on the same maze and prints a table.
 
             Options:
+              --file=PATH     Load a maze from a text file, e.g. mazes/swamp.txt
               --random        Use a randomly generated maze
               --seed=N        Seed for the random maze (implies --random)
               --size=RxC      Size of the random maze, e.g. 21x41 (default 15x31)
@@ -49,7 +53,14 @@ public class Main {
             return;
         }
 
-        Maze maze = createMaze(options);
+        Maze maze;
+
+        try {
+            maze = createMaze(options);
+        } catch (IOException | IllegalArgumentException exception) {
+            System.out.println("Could not load maze: " + exception.getMessage());
+            return;
+        }
 
         //Run the animated search
         List<Cell> path = algorithm.findPath(maze, new ConsoleAnimation(options.delay()));
@@ -80,27 +91,41 @@ public class Main {
         System.out.println("Moves: " + (path.size() - 1));
         System.out.println("Path cost: " + Maze.pathCost(path));
 
-        if (options.random()) {
+        if (options.random() && options.file() == null) {
             System.out.println("Maze seed: " + options.seed());
         }
     }
 
     private static void compareAlgorithms(Options options) {
-        //Every algorithm gets its own fresh copy of the same maze
-        List<AlgorithmComparison.Result> results =
-                AlgorithmComparison.run(Algorithms.all(), () -> createMaze(options));
+        Maze maze;
 
-        MazeRenderer.print(createMaze(options));
+        try {
+            maze = createMaze(options);
+        } catch (IOException | IllegalArgumentException exception) {
+            System.out.println("Could not load maze: " + exception.getMessage());
+            return;
+        }
+
+        //Every algorithm gets its own fresh copy of the same maze
+        String layout = MazeRenderer.toText(maze);
+        List<AlgorithmComparison.Result> results =
+                AlgorithmComparison.run(Algorithms.all(), () -> MazeParser.parse(layout));
+
+        MazeRenderer.print(maze);
         System.out.println();
         System.out.print(AlgorithmComparison.formatTable(results));
 
-        if (options.random()) {
+        if (options.random() && options.file() == null) {
             System.out.println();
             System.out.println("Maze seed: " + options.seed());
         }
     }
 
-    private static Maze createMaze(Options options) {
+    private static Maze createMaze(Options options) throws IOException {
+        if (options.file() != null) {
+            return MazeParser.load(Path.of(options.file()));
+        }
+
         if (options.random()) {
             return new MazeGenerator(options.seed(), options.mud())
                     .generate(options.rows(), options.columns());
@@ -126,6 +151,7 @@ public class Main {
 
     private record Options(
             String algorithm,
+            String file,
             boolean random,
             long seed,
             int rows,
@@ -136,6 +162,7 @@ public class Main {
 
         static Options parse(String[] args) {
             String algorithm = "bfs";
+            String file = null;
             boolean random = false;
             Long seed = null;
             int rows = 15;
@@ -145,7 +172,9 @@ public class Main {
 
             for (String arg : args) {
                 try {
-                    if (arg.equals("--random")) {
+                    if (arg.startsWith("--file=")) {
+                        file = value(arg);
+                    } else if (arg.equals("--random")) {
                         random = true;
                     } else if (arg.startsWith("--seed=")) {
                         seed = Long.parseLong(value(arg));
@@ -190,7 +219,7 @@ public class Main {
             //Pick a seed when none is given, so the maze can be reproduced later
             long finalSeed = seed != null ? seed : new Random().nextLong();
 
-            return new Options(algorithm, random, finalSeed, rows, columns, mud, delay);
+            return new Options(algorithm, file, random, finalSeed, rows, columns, mud, delay);
         }
 
         private static String value(String arg) {

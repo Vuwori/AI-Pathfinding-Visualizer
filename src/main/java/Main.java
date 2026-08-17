@@ -26,7 +26,8 @@ public class Main {
               --seed=N        Seed for the random maze (implies --random)
               --size=RxC      Size of the random maze, e.g. 21x41 (default 15x31)
               --mud=F         Share of the random maze covered in mud, 0 to 1 (default 0)
-              --delay=MS      Milliseconds between animation frames (default 100)""";
+              --delay=MS      Milliseconds between animation frames (default 100)
+              --no-color      Print without colors""";
 
     public static void main(String[] args) {
 
@@ -63,7 +64,7 @@ public class Main {
         }
 
         //Run the animated search
-        List<Cell> path = algorithm.findPath(maze, new ConsoleAnimation(options.delay()));
+        List<Cell> path = algorithm.findPath(maze, new ConsoleAnimation(options.delay(), options.color()));
 
         //Stop if no path was found
         if (path.isEmpty()) {
@@ -84,7 +85,7 @@ public class Main {
         //Print the clean final result
         System.out.println();
         System.out.println(algorithm.getName() + " completed:");
-        MazeRenderer.print(maze);
+        MazeRenderer.print(maze, options.color());
 
         System.out.println();
         System.out.println("Path cells: " + path.size());
@@ -111,7 +112,7 @@ public class Main {
         List<AlgorithmComparison.Result> results =
                 AlgorithmComparison.run(Algorithms.all(), () -> MazeParser.parse(layout));
 
-        MazeRenderer.print(maze);
+        MazeRenderer.print(maze, options.color());
         System.out.println();
         System.out.print(AlgorithmComparison.formatTable(results));
 
@@ -157,7 +158,8 @@ public class Main {
             int rows,
             int columns,
             double mud,
-            long delay
+            long delay,
+            boolean color
     ) {
 
         static Options parse(String[] args) {
@@ -169,6 +171,7 @@ public class Main {
             int columns = 31;
             double mud = 0;
             long delay = 100;
+            boolean color = MazeRenderer.terminalSupportsColor();
 
             for (String arg : args) {
                 try {
@@ -189,6 +192,8 @@ public class Main {
                     } else if (arg.startsWith("--mud=")) {
                         mud = Double.parseDouble(value(arg));
                         random = true;
+                    } else if (arg.equals("--no-color")) {
+                        color = false;
                     } else if (arg.startsWith("--delay=")) {
                         delay = Long.parseLong(value(arg));
                     } else if (arg.startsWith("--")) {
@@ -219,7 +224,7 @@ public class Main {
             //Pick a seed when none is given, so the maze can be reproduced later
             long finalSeed = seed != null ? seed : new Random().nextLong();
 
-            return new Options(algorithm, file, random, finalSeed, rows, columns, mud, delay);
+            return new Options(algorithm, file, random, finalSeed, rows, columns, mud, delay, color);
         }
 
         private static String value(String arg) {

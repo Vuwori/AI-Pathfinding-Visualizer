@@ -1,9 +1,11 @@
 import algorithms.Algorithms;
 import algorithms.PathfindingAlgorithm;
 import analysis.AlgorithmComparison;
+import analysis.Benchmark;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import maze.Cell;
 import maze.CellType;
@@ -16,9 +18,10 @@ import renderer.MazeRenderer;
 public class Main {
 
     private static final String USAGE = """
-            Usage: java Main [bfs|dfs|dijkstra|astar|greedy|bidirectional|compare] [options]
+            Usage: java Main [bfs|dfs|dijkstra|astar|greedy|bidirectional|compare|benchmark] [options]
 
-            compare runs every algorithm on the same maze and prints a table.
+            compare   runs every algorithm on the same maze and prints a table.
+            benchmark runs every algorithm on many random mazes and averages the results.
 
             Options:
               --file=PATH     Load a maze from a text file, e.g. mazes/swamp.txt
@@ -27,6 +30,7 @@ public class Main {
               --size=RxC      Size of the random maze, e.g. 21x41 (default 15x31)
               --mud=F         Share of the random maze covered in mud, 0 to 1 (default 0)
               --delay=MS      Milliseconds between animation frames (default 100)
+              --runs=N        Number of mazes for benchmark (default 100)
               --no-color      Print without colors""";
 
     public static void main(String[] args) {
@@ -43,6 +47,11 @@ public class Main {
 
         if (options.algorithm().equalsIgnoreCase("compare")) {
             compareAlgorithms(options);
+            return;
+        }
+
+        if (options.algorithm().equalsIgnoreCase("benchmark")) {
+            benchmarkAlgorithms(options);
             return;
         }
 
@@ -122,6 +131,30 @@ public class Main {
         }
     }
 
+    private static void benchmarkAlgorithms(Options options) {
+        System.out.printf(
+                Locale.ROOT,
+                "Benchmarking %d random %dx%d mazes (seeds %d to %d, %.0f%% mud)...%n%n",
+                options.runs(),
+                options.rows(),
+                options.columns(),
+                options.seed(),
+                options.seed() + options.runs() - 1,
+                options.mud() * 100
+        );
+
+        List<Benchmark.Summary> summaries = Benchmark.run(
+                Algorithms.all(),
+                options.seed(),
+                options.runs(),
+                seed -> new MazeGenerator(seed, options.mud()).generate(options.rows(), options.columns())
+        );
+
+        System.out.print(Benchmark.formatTable(summaries));
+        System.out.println();
+        System.out.println("Optimal = how often the path was as cheap as the best path found.");
+    }
+
     private static Maze createMaze(Options options) throws IOException {
         if (options.file() != null) {
             return MazeParser.load(Path.of(options.file()));
@@ -159,6 +192,7 @@ public class Main {
             int columns,
             double mud,
             long delay,
+            int runs,
             boolean color
     ) {
 
@@ -171,6 +205,7 @@ public class Main {
             int columns = 31;
             double mud = 0;
             long delay = 100;
+            int runs = 100;
             boolean color = MazeRenderer.terminalSupportsColor();
 
             for (String arg : args) {
@@ -192,6 +227,8 @@ public class Main {
                     } else if (arg.startsWith("--mud=")) {
                         mud = Double.parseDouble(value(arg));
                         random = true;
+                    } else if (arg.startsWith("--runs=")) {
+                        runs = Integer.parseInt(value(arg));
                     } else if (arg.equals("--no-color")) {
                         color = false;
                     } else if (arg.startsWith("--delay=")) {
@@ -217,14 +254,18 @@ public class Main {
                 throw new IllegalArgumentException("Mud must be between 0 and 1");
             }
 
+            if (runs <= 0) {
+                throw new IllegalArgumentException("Runs must be at least 1");
+            }
+
             if (delay < 0) {
                 throw new IllegalArgumentException("Delay cannot be negative");
             }
 
             //Pick a seed when none is given, so the maze can be reproduced later
-            long finalSeed = seed != null ? seed : new Random().nextLong();
+            long finalSeed = seed != null ? seed : new Random().nextInt(1_000_000);
 
-            return new Options(algorithm, file, random, finalSeed, rows, columns, mud, delay, color);
+            return new Options(algorithm, file, random, finalSeed, rows, columns, mud, delay, runs, color);
         }
 
         private static String value(String arg) {

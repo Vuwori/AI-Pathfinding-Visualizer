@@ -49,6 +49,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
+                <configuration>
+                    <!-- GUI tests draw into images and never open a window -->
+                    <systemPropertyVariables>
+                        <java.awt.headless>true</java.awt.headless>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
 
             <!-- Makes the jar runnable with: java -jar target/ai-pathfinding-visualizer-1.0-SNAPSHOT.jar -->

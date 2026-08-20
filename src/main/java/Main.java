@@ -2,6 +2,9 @@ import algorithms.Algorithms;
 import algorithms.PathfindingAlgorithm;
 import analysis.AlgorithmComparison;
 import analysis.Benchmark;
+import gui.VisualizerWindow;
+import java.awt.GraphicsEnvironment;
+import javax.swing.SwingUtilities;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -18,8 +21,9 @@ import renderer.MazeRenderer;
 public class Main {
 
     private static final String USAGE = """
-            Usage: java Main [bfs|dfs|dijkstra|astar|greedy|bidirectional|compare|benchmark] [options]
+            Usage: java Main [bfs|dfs|dijkstra|astar|greedy|bidirectional|compare|benchmark|gui] [options]
 
+            gui       opens the desktop visualizer.
             compare   runs every algorithm on the same maze and prints a table.
             benchmark runs every algorithm on many random mazes and averages the results.
 
@@ -47,6 +51,11 @@ public class Main {
 
         if (options.algorithm().equalsIgnoreCase("compare")) {
             compareAlgorithms(options);
+            return;
+        }
+
+        if (options.algorithm().equalsIgnoreCase("gui")) {
+            openWindow(options);
             return;
         }
 
@@ -129,6 +138,27 @@ public class Main {
             System.out.println();
             System.out.println("Maze seed: " + options.seed());
         }
+    }
+
+    //The window starts with a random maze unless a file is given
+    private static void openWindow(Options options) {
+        if (GraphicsEnvironment.isHeadless()) {
+            System.out.println("The GUI needs a display; use the console modes instead.");
+            return;
+        }
+
+        Maze maze;
+
+        try {
+            maze = options.file() != null
+                    ? MazeParser.load(Path.of(options.file()))
+                    : new MazeGenerator(options.seed(), options.mud()).generate(options.rows(), options.columns());
+        } catch (IOException | IllegalArgumentException exception) {
+            System.out.println("Could not load maze: " + exception.getMessage());
+            return;
+        }
+
+        SwingUtilities.invokeLater(() -> new VisualizerWindow(maze).setVisible(true));
     }
 
     private static void benchmarkAlgorithms(Options options) {

@@ -13,16 +13,21 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.WindowConstants;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
 //The main window: a toolbar with the algorithm, speed and run controls,
-//the maze in the middle and a status line at the bottom
+//the maze in the middle and a status line at the bottom. The maze can be
+//edited with the mouse: the left button uses the selected tool, the right
+//button always erases.
 public class VisualizerWindow extends JFrame {
 
     private static final long SLOWEST_DELAY = 200;
@@ -32,8 +37,10 @@ public class VisualizerWindow extends JFrame {
             new JComboBox<>(Algorithms.all().toArray(new PathfindingAlgorithm[0]));
     private final JButton runButton = new JButton("Run");
     private final JButton clearButton = new JButton("Clear path");
+    private final JComboBox<EditTool> toolBox = new JComboBox<>(EditTool.values());
     private final JSlider speedSlider = new JSlider(0, 100, 75);
-    private final JLabel statusLabel = new JLabel("Pick an algorithm and press Run.");
+    private final JLabel statusLabel =
+            new JLabel("Draw on the maze, pick an algorithm and press Run. Right-click erases.");
 
     //Read by the search thread, so it must not touch the slider itself
     private volatile long delayMilliseconds;
@@ -56,6 +63,10 @@ public class VisualizerWindow extends JFrame {
         speedSlider.addChangeListener(event -> updateDelay());
         updateDelay();
 
+        MouseAdapter editor = new MazeEditor();
+        mazePanel.addMouseListener(editor);
+        mazePanel.addMouseMotionListener(editor);
+
         pack();
         setLocationRelativeTo(null);
     }
@@ -67,6 +78,8 @@ public class VisualizerWindow extends JFrame {
         toolbar.add(algorithmBox);
         toolbar.add(runButton);
         toolbar.add(clearButton);
+        toolbar.add(new JLabel("Draw:"));
+        toolbar.add(toolBox);
         toolbar.add(new JLabel("Speed:"));
         toolbar.add(speedSlider);
 
@@ -129,6 +142,40 @@ public class VisualizerWindow extends JFrame {
         runButton.setText(running ? "Stop" : "Run");
         algorithmBox.setEnabled(!running);
         clearButton.setEnabled(!running);
+        toolBox.setEnabled(!running);
+    }
+
+    //Applies a tool to the cell under the mouse, then repaints.
+    //Old search results are cleared first, since they no longer match the maze.
+    void edit(EditTool tool, Cell cell) {
+        if (isSearching() || cell == null) {
+            return;
+        }
+
+        mazePanel.getMaze().clearSearchResults();
+        tool.apply(mazePanel.getMaze(), cell);
+        mazePanel.repaint();
+    }
+
+    private final class MazeEditor extends MouseAdapter {
+
+        @Override
+        public void mousePressed(MouseEvent event) {
+            paint(event);
+        }
+
+        @Override
+        public void mouseDragged(MouseEvent event) {
+            paint(event);
+        }
+
+        private void paint(MouseEvent event) {
+            EditTool tool = SwingUtilities.isRightMouseButton(event)
+                    ? EditTool.ERASE
+                    : (EditTool) toolBox.getSelectedItem();
+
+            edit(tool, mazePanel.cellAt(event.getX(), event.getY()));
+        }
     }
 
     private record SearchSummary(List<Cell> path, int cellsExplored) {

@@ -187,4 +187,26 @@ class MazeTest {
         assertEquals(0, Maze.pathCost(List.of(maze.getCell(0, 0))));
         assertEquals(0, Maze.pathCost(List.of()));
     }
+
+    @Test
+    void copyKeepsLayoutButNotSearchResults() {
+        Maze maze = new Maze(2, 3);
+        maze.setStart(0, 0);
+        maze.setEnd(1, 2);
+        maze.setWall(0, 1);
+        maze.setWeight(1, 1, 5);
+        maze.getCell(1, 1).setType(CellType.VISITED);
+
+        Maze copy = maze.copy();
+
+        assertEquals(copy.getCell(0, 0), copy.getStartCell());
+        assertEquals(copy.getCell(1, 2), copy.getEndCell());
+        assertEquals(CellType.WALL, copy.getCell(0, 1).getType());
+        assertEquals(CellType.EMPTY, copy.getCell(1, 1).getType());
+        assertEquals(5, copy.getCell(1, 1).getWeight());
+
+        //Changing the copy leaves the original alone
+        copy.setWall(1, 0);
+        assertEquals(CellType.EMPTY, maze.getCell(1, 0).getType());
+    }
 }

@@ -157,6 +157,33 @@ public class Maze {
         }
     }
 
+    //A copy with the same walls, weights, start and end, but no search results
+    public Maze copy() {
+        Maze copy = new Maze(rows, columns);
+
+        for (int row = 0; row < rows; row++) {
+            for (int column = 0; column < columns; column++) {
+                Cell cell = grid[row][column];
+
+                if (cell.getType() == CellType.WALL) {
+                    copy.setWall(row, column);
+                } else {
+                    copy.setWeight(row, column, cell.getWeight());
+                }
+            }
+        }
+
+        if (startCell != null) {
+            copy.setStart(startCell.getRow(), startCell.getColumn());
+        }
+
+        if (endCell != null) {
+            copy.setEnd(endCell.getRow(), endCell.getColumn());
+        }
+
+        return copy;
+    }
+
     public void clearSearchResults() {
         for (Cell[] row : grid) {
             for (Cell cell : row) {

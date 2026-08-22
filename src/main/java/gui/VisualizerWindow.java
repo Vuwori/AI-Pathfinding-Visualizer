@@ -5,22 +5,45 @@ import algorithms.PathfindingAlgorithm;
 import maze.Cell;
 import maze.CellType;
 import maze.Maze;
+import maze.MazeGenerator;
+import maze.MazeParser;
+import renderer.MazeRenderer;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.AbstractAction;
+import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.WindowConstants;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
@@ -40,10 +63,14 @@ public class VisualizerWindow extends JFrame {
     private final JComboBox<EditTool> toolBox = new JComboBox<>(EditTool.values());
     private final JSlider speedSlider = new JSlider(0, 100, 75);
     private final JLabel statusLabel =
-            new JLabel("Draw on the maze, pick an algorithm and press Run. Right-click erases.");
+            new JLabel("Draw on the maze, pick an algorithm and press Run (Space). Right-click erases.");
 
     //Read by the search thread, so it must not touch the slider itself
     private volatile long delayMilliseconds;
+
+    //Menu items that would change the maze, disabled while a search runs
+    private final List<JMenuItem> mazeMenuItems = new ArrayList<>();
+    private final JFileChooser fileChooser = new JFileChooser("mazes");
 
     private SearchWorker runningSearch;
 
@@ -53,6 +80,7 @@ public class VisualizerWindow extends JFrame {
         mazePanel = new MazePanel(maze);
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        setJMenuBar(createMenuBar());
         setLayout(new BorderLayout());
         add(createToolbar(), BorderLayout.NORTH);
         add(mazePanel, BorderLayout.CENTER);
@@ -63,12 +91,143 @@ public class VisualizerWindow extends JFrame {
         speedSlider.addChangeListener(event -> updateDelay());
         updateDelay();
 
+        bindKey("SPACE", "toggleSearch", this::toggleSearch);
+        bindKey("ESCAPE", "clearSearch", () -> {
+            if (!isSearching()) {
+                clearSearch();
+            }
+        });
+
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Maze files (*.txt)", "txt"));
+
         MouseAdapter editor = new MazeEditor();
         mazePanel.addMouseListener(editor);
         mazePanel.addMouseMotionListener(editor);
 
         pack();
         setLocationRelativeTo(null);
+    }
+
+    private JMenuBar createMenuBar() {
+        int shortcut = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+
+        JMenu mazeMenu = new JMenu("Maze");
+        mazeMenu.add(menuItem("New random maze...", KeyStroke.getKeyStroke(KeyEvent.VK_N, shortcut), this::newRandomMaze));
+        mazeMenu.add(menuItem("New empty maze", null, this::newEmptyMaze));
+        mazeMenu.addSeparator();
+        mazeMenu.add(menuItem("Open...", KeyStroke.getKeyStroke(KeyEvent.VK_O, shortcut), this::openMaze));
+        mazeMenu.add(menuItem("Save as...", KeyStroke.getKeyStroke(KeyEvent.VK_S, shortcut), this::saveMaze));
+
+        JMenu analysisMenu = new JMenu("Analysis");
+        analysisMenu.add(menuItem("Compare all algorithms", KeyStroke.getKeyStroke(KeyEvent.VK_K, shortcut),
+                () -> ComparisonDialog.show(this, mazePanel.getMaze())));
+
+        JMenuBar menuBar = new JMenuBar();
+        menuBar.add(mazeMenu);
+        menuBar.add(analysisMenu);
+        return menuBar;
+    }
+
+    private JMenuItem menuItem(String label, KeyStroke shortcut, Runnable action) {
+        JMenuItem item = new JMenuItem(label);
+        item.setAccelerator(shortcut);
+        item.addActionListener(event -> action.run());
+        mazeMenuItems.add(item);
+        return item;
+    }
+
+    private void bindKey(String key, String name, Runnable action) {
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(key), name);
+        getRootPane().getActionMap().put(name, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                action.run();
+            }
+        });
+    }
+
+    private void newRandomMaze() {
+        Maze current = mazePanel.getMaze();
+        JSpinner rows = new JSpinner(new SpinnerNumberModel(current.getRows(), MazeGenerator.MINIMUM_SIZE, 151, 2));
+        JSpinner columns = new JSpinner(new SpinnerNumberModel(current.getColumns(), MazeGenerator.MINIMUM_SIZE, 251, 2));
+        JSpinner mud = new JSpinner(new SpinnerNumberModel(15, 0, 80, 5));
+        JTextField seed = new JTextField();
+
+        JPanel form = new JPanel(new GridLayout(0, 2, 8, 6));
+        form.add(new JLabel("Rows:"));
+        form.add(rows);
+        form.add(new JLabel("Columns:"));
+        form.add(columns);
+        form.add(new JLabel("Mud (%):"));
+        form.add(mud);
+        form.add(new JLabel("Seed (blank = random):"));
+        form.add(seed);
+
+        int choice = JOptionPane.showConfirmDialog(
+                this, form, "New random maze", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (choice != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        long mazeSeed;
+
+        try {
+            mazeSeed = seed.getText().isBlank()
+                    ? new Random().nextInt(1_000_000)
+                    : Long.parseLong(seed.getText().trim());
+        } catch (NumberFormatException exception) {
+            JOptionPane.showMessageDialog(this, "The seed must be a whole number.");
+            return;
+        }
+
+        Maze maze = new MazeGenerator(mazeSeed, (Integer) mud.getValue() / 100.0)
+                .generate((Integer) rows.getValue(), (Integer) columns.getValue());
+
+        showMaze(maze, "New maze from seed " + mazeSeed + ".");
+    }
+
+    private void newEmptyMaze() {
+        Maze current = mazePanel.getMaze();
+        Maze maze = new Maze(current.getRows(), current.getColumns());
+
+        maze.setStart(current.getRows() / 2, 1);
+        maze.setEnd(current.getRows() / 2, current.getColumns() - 2);
+
+        showMaze(maze, "Empty maze: draw some walls and mud.");
+    }
+
+    private void openMaze() {
+        if (fileChooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        try {
+            Maze maze = MazeParser.load(fileChooser.getSelectedFile().toPath());
+            showMaze(maze, "Opened " + fileChooser.getSelectedFile().getName() + ".");
+        } catch (IOException | IllegalArgumentException exception) {
+            JOptionPane.showMessageDialog(this, "Could not open maze:\n" + exception.getMessage());
+        }
+    }
+
+    private void saveMaze() {
+        if (fileChooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        try {
+            Files.writeString(fileChooser.getSelectedFile().toPath(), MazeRenderer.toText(mazePanel.getMaze().copy()));
+            setStatus("Saved " + fileChooser.getSelectedFile().getName() + ".");
+        } catch (IOException exception) {
+            JOptionPane.showMessageDialog(this, "Could not save maze:\n" + exception.getMessage());
+        }
+    }
+
+    void showMaze(Maze maze, String status) {
+        mazePanel.setMaze(maze);
+        setStatus(status);
+        pack();
     }
 
     private JPanel createToolbar() {
@@ -143,6 +302,7 @@ public class VisualizerWindow extends JFrame {
         algorithmBox.setEnabled(!running);
         clearButton.setEnabled(!running);
         toolBox.setEnabled(!running);
+        mazeMenuItems.forEach(item -> item.setEnabled(!running));
     }
 
     //Applies a tool to the cell under the mouse, then repaints.

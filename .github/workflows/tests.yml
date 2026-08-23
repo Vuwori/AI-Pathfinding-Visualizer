@@ -8,7 +8,14 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: Tests on ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Check out code
@@ -21,5 +28,26 @@ jobs:
           java-version: '21'
           cache: maven
 
+      # verify runs the tests and the coverage check
       - name: Run tests
-        run: ./mvnw -B test
+        if: runner.os != 'Windows'
+        run: ./mvnw -B verify
+
+      - name: Run tests (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: mvnw.cmd -B verify
+
+      - name: Write coverage summary
+        if: runner.os == 'Linux'
+        run: |
+          awk -F, 'NR > 1 { missed += $8; covered += $9 }
+            END { printf "### Test coverage\n\nLine coverage: **%.1f%%** (%d of %d lines)\n", 100 * covered / (missed + covered), covered, missed + covered }' \
+            target/site/jacoco/jacoco.csv >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: target/site/jacoco

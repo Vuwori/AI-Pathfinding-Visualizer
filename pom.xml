@@ -6,7 +6,7 @@
 
     <groupId>io.github.vuwori</groupId>
     <artifactId>ai-pathfinding-visualizer</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <name>AI Pathfinding Visualizer</name>
@@ -38,6 +38,9 @@
     </dependencies>
 
     <build>
+        <!-- A fixed name, so the jar is always target/pathfinding-visualizer.jar -->
+        <finalName>pathfinding-visualizer</finalName>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -101,7 +104,7 @@
                 </executions>
             </plugin>
 
-            <!-- Makes the jar runnable with: java -jar target/ai-pathfinding-visualizer-1.0-SNAPSHOT.jar -->
+            <!-- Makes the jar runnable with: java -jar target/pathfinding-visualizer.jar -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

@@ -45,7 +45,7 @@ Or build a runnable jar:
 
 ```bash
 ./mvnw package
-java -jar target/ai-pathfinding-visualizer-1.0-SNAPSHOT.jar dijkstra
+java -jar target/pathfinding-visualizer.jar dijkstra
 ```
 
 On Windows, use `mvnw.cmd` instead of `./mvnw`.
@@ -60,8 +60,8 @@ Options:
 | `--delay=MS` | Milliseconds between animation frames (default `100`) |
 
 ```bash
-java -jar target/ai-pathfinding-visualizer-1.0-SNAPSHOT.jar astar --random --size=21x41 --delay=20
-java -jar target/ai-pathfinding-visualizer-1.0-SNAPSHOT.jar compare --seed=2026 --size=21x41
+java -jar target/pathfinding-visualizer.jar astar --random --size=21x41 --delay=20
+java -jar target/pathfinding-visualizer.jar compare --seed=2026 --size=21x41
 ```
 
 Random runs print their seed, so any interesting maze can be reproduced later.
